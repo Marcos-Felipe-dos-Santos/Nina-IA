@@ -1,0 +1,124 @@
+# ============================================================
+# Nina IA — Arquivo de configuração central
+# Nunca faça hardcode de credenciais ou parâmetros no código.
+# ============================================================
+
+# --- Speech-to-Text (STT) ---------------------------------
+stt:
+  # Modelo WhisperX: tiny, base, small, medium, large-v3
+  model_name: "small"
+  # Dispositivo: "cuda" para GPU NVIDIA, "cpu" para sem GPU
+  device: "cuda"
+  # Tipo de computação: "float16" para GPU, "int8" para CPU
+  compute_type: "float16"
+  # Idioma forçado (null = detecção automática)
+  language: "pt"
+  # Tamanho do batch para WhisperX
+  batch_size: 16
+  # Índice do dispositivo de entrada de áudio (null usa o padrão do sistema)
+  device_index: 3
+
+# --- Voice Activity Detection (VAD) -----------------------
+vad:
+  # Taxa de amostragem em Hz (silero-vad aceita 8000 ou 16000)
+  sample_rate: 16000
+  # Tamanho do chunk em amostras (512 = 32ms a 16kHz)
+  chunk_size: 512
+  # Limiar de confiança para fala (0.0 a 1.0)
+  threshold: 0.5
+  # Duração mínima de silêncio para considerar fim da fala (ms)
+  min_silence_duration_ms: 700
+  # Padding de fala (ms)
+  speech_pad_ms: 300
+
+# --- Text-to-Speech (TTS) ---------------------------------
+tts:
+  # Código de idioma Kokoro: 'a' = inglês americano, 'p' = pt-br
+  lang_code: "p"
+  # Nome da voz Kokoro (vozes pt-br: pf_dora, pm_alex, pm_santa)
+  voice: "pf_dora"
+  # Velocidade de fala (1.0 = normal)
+  speed: 1.0
+  # Taxa de amostragem de saída do Kokoro
+  sample_rate: 24000
+
+# --- LLM (Gemini / Ollama) ------------------------------------------
+llm:
+  provider: "gemini"  # opções: "gemini" | "ollama"
+  gemini_model: "gemini-2.0-flash"
+  ollama_model: "llama3"
+  ollama_url: "http://localhost:11434"
+  # API key: definida no arquivo .env (carregada automaticamente via python-dotenv)
+  # Nunca coloque a API key diretamente neste arquivo!
+  temperature: 0.7
+  max_tokens: 1024
+  # Número máximo de mensagens no histórico de conversa
+  max_history: 20
+  # Número de tentativas em caso de erro na API
+  max_retries: 3
+  # Habilitar streaming de resposta (tokens impressos conforme chegam)
+  streaming: true
+  # System prompt — personalidade da Nina
+  system_prompt: >
+    Você é Nina, uma assistente pessoal inteligente, direta e com personalidade.
+    Você responde de forma natural e conversacional, como uma amiga próxima.
+    Seja concisa nas respostas de voz (máximo 2-3 frases). Fale em português do Brasil.
+
+# --- Memória (RAG com ChromaDB) ----------------------------
+memory:
+  # Habilitar memória de longo prazo
+  enabled: true
+  backend: "chromadb"
+  # Diretório para persistência do ChromaDB
+  persist_directory: "./data/memory"
+  # Nome da coleção no ChromaDB
+  collection_name: "nina_memory"
+  # Modelo de embeddings (sentence-transformers)
+  embedding_model: "paraphrase-multilingual-MiniLM-L12-v2"
+  # Número de memórias retornadas por busca
+  n_results: 3
+  # Prompt para resumir conversas antes de salvar
+  summary_prompt: >
+    Resuma a seguinte troca de conversa em 1-2 frases curtas em português,
+    capturando apenas a informação essencial que seria útil lembrar no futuro:
+
+# --- Visão de tela (multimodal) ----------------------------
+vision:
+  # Habilitar módulo de visão
+  enabled: true
+  # Modelo Gemini para análise de imagem
+  model: "gemini-2.0-flash"
+  # Modo de ativação: "manual" ou "auto"
+  mode: "manual"
+  # Intervalo de captura automática em segundos (modo auto)
+  auto_interval_seconds: 30
+  # Qualidade JPEG para compressão (1-100, menor = mais comprimido)
+  compression_quality: 60
+  # Largura máxima da imagem (redimensiona mantendo proporção)
+  max_width: 1280
+  # Diretório para screenshots temporários
+  screenshot_dir: "./data/screenshots"
+
+# --- Avatar (VTube Studio) ---------------------------------
+avatar:
+  enabled: false
+  vtube_port: 8001
+  plugin_name: "Nina IA"
+  expressions:
+    alegria: "Sorrir"
+    tristeza: "Triste"
+    surpresa: "Surpresa"
+    raiva: "Raiva"
+    neutro: "Neutro"
+  keywords:
+    alegria: ["ótimo", "incrível", "feliz", "parabéns", "adorei", "maravilhoso", "que bom", "haha", "rsrs"]
+    tristeza: ["sinto muito", "que pena", "triste", "infelizmente", "lamento", "péssimo"]
+    surpresa: ["uau", "nossa", "sério", "não acredito", "incrível", "que surpresa"]
+    raiva: ["absurdo", "ridículo", "impossível", "que raiva", "indignado"]
+
+# --- Geral -------------------------------------------------
+general:
+  # Nível de log: DEBUG, INFO, WARNING, ERROR
+  log_level: "INFO"
+  # Tempo máximo de gravação para testes (segundos)
+  test_record_seconds: 3
