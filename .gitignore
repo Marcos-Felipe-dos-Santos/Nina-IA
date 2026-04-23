@@ -1,0 +1,51 @@
+# ============================================================
+# Nina IA — .gitignore
+# ============================================================
+
+# --- Segredos e configurações sensíveis ---
+.env
+
+# --- Ambiente virtual ---
+venv/
+.venv/
+
+# --- Python cache ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Dados locais da Nina (memórias, notas, screenshots) ---
+data/
+
+# --- Pesos de modelos (baixados em runtime) ---
+*.pth
+*.bin
+*.onnx
+*.pt
+
+# --- Testes ---
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# --- Distribuição / Build ---
+dist/
+build/
+*.egg-info/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS ---
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# --- AI Agent Config (Antigravity) ---
+.agent/
