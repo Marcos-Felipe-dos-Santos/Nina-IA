@@ -34,8 +34,14 @@ class KokoroSynthesizer:
         """Inicializa o sintetizador com parâmetros do config.yaml."""
         config_tts = obter_secao("tts")
 
-        self.lang_code: str = config_tts.get("lang_code", "p")
-        self.voice: str = config_tts.get("voice", "pf_dora")
+        self.lang_code: str = config_tts.get(
+            "kokoro_lang",
+            config_tts.get("lang_code", "p"),
+        )
+        self.voice: str = config_tts.get(
+            "kokoro_voice",
+            config_tts.get("voice", "pf_dora"),
+        )
         self.speed: float = config_tts.get("speed", 1.0)
         self.sample_rate: int = config_tts.get("sample_rate", 24000)
 
