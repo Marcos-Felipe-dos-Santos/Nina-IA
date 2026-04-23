@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard de monitoramento em tempo real da Nina IA">
+    <title>Nina IA — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════════ */
+        /* Design System                                       */
+        /* ═══════════════════════════════════════════════════ */
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2236;
+            --bg-card-hover: #1f2a42;
+            --border-color: #2a3554;
+            --text-primary: #e4e8f1;
+            --text-secondary: #8896b3;
+            --text-muted: #5a6a8a;
+            --accent-cyan: #06d6a0;
+            --accent-blue: #4cc9f0;
+            --accent-purple: #7b61ff;
+            --accent-amber: #f0c040;
+            --accent-red: #ef476f;
+            --accent-pink: #f72585;
+            --glow-cyan: rgba(6, 214, 160, 0.15);
+            --glow-blue: rgba(76, 201, 240, 0.15);
+            --glow-purple: rgba(123, 97, 255, 0.12);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow: 0 8px 32px rgba(0,0,0,0.3);
+            --font: 'Inter', -apple-system, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ═══════════ Background Effects ═══════════ */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background:
+                radial-gradient(circle at 20% 20%, var(--glow-purple) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, var(--glow-cyan) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, var(--glow-blue) 0%, transparent 50%);
+            z-index: -1;
+            animation: bgDrift 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgDrift {
+            0%   { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-3%, -3%) rotate(3deg); }
+        }
+
+        /* ═══════════ Header ═══════════ */
+        .header {
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(16px);
+            background: rgba(10, 14, 23, 0.7);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 0 24px var(--glow-purple);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+        }
+
+        .header h1 span {
+            color: var(--accent-cyan);
+        }
+
+        .ws-badge {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(6, 214, 160, 0.08);
+            border: 1px solid rgba(6, 214, 160, 0.2);
+            color: var(--accent-cyan);
+            transition: all 0.3s;
+        }
+
+        .ws-badge.disconnected {
+            background: rgba(239, 71, 111, 0.08);
+            border-color: rgba(239, 71, 111, 0.2);
+            color: var(--accent-red);
+        }
+
+        .ws-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            animation: pulse 2s infinite;
+        }
+
+        .ws-badge.disconnected .ws-dot {
+            background: var(--accent-red);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* ═══════════ Main Layout ═══════════ */
+        .main {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px 32px;
+            display: grid;
+            gap: 20px;
+        }
+
+        /* ═══════════ State Indicator ═══════════ */
+        .state-bar {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .state-orb {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            transition: all 0.5s ease;
+        }
+
+        .state-orb::after {
+            content: '';
+            position: absolute;
+            inset: -6px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            animation: orbRing 3s linear infinite;
+        }
+
+        .state-orb.idle     { background: rgba(90,106,138,0.2); box-shadow: 0 0 30px rgba(90,106,138,0.15); }
+        .state-orb.listening { background: rgba(6,214,160,0.15); box-shadow: 0 0 40px var(--glow-cyan); }
+        .state-orb.listening::after { border-color: var(--accent-cyan) transparent var(--accent-cyan) transparent; }
+        .state-orb.thinking  { background: rgba(240,192,64,0.12); box-shadow: 0 0 40px rgba(240,192,64,0.15); }
+        .state-orb.thinking::after  { border-color: var(--accent-amber) transparent var(--accent-amber) transparent; animation-duration: 1s; }
+        .state-orb.speaking  { background: rgba(76,201,240,0.12); box-shadow: 0 0 40px var(--glow-blue); }
+        .state-orb.speaking::after  { border-color: var(--accent-blue) transparent var(--accent-blue) transparent; animation-duration: 0.8s; }
+        .state-orb.error     { background: rgba(239,71,111,0.12); box-shadow: 0 0 40px rgba(239,71,111,0.15); }
+
+        @keyframes orbRing {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .state-info h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .state-info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .state-stats {
+            margin-left: auto;
+            display: flex;
+            gap: 32px;
+        }
+
+        .state-stat {
+            text-align: center;
+        }
+
+        .state-stat .val {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+
+        .state-stat .lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* ═══════════ Metric Cards ═══════════ */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .metric-card {
+            padding: 20px 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .metric-card:nth-child(1)::before { background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue)); }
+        .metric-card:nth-child(2)::before { background: linear-gradient(90deg, var(--accent-purple), var(--accent-pink)); }
+        .metric-card:nth-child(3)::before { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+        .metric-card:nth-child(4)::before { background: linear-gradient(90deg, var(--accent-amber), #ff8c42); }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .metric-card:nth-child(1) .metric-value { color: var(--accent-cyan); }
+        .metric-card:nth-child(2) .metric-value { color: var(--accent-purple); }
+        .metric-card:nth-child(3) .metric-value { color: var(--accent-blue); }
+        .metric-card:nth-child(4) .metric-value { color: var(--accent-amber); }
+
+        .metric-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* ═══════════ Content Panels ═══════════ */
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            max-height: 520px;
+        }
+
+        .panel-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .panel-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .panel-badge {
+            background: rgba(123,97,255,0.1);
+            color: var(--accent-purple);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .panel-body {
+            padding: 16px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .panel-body::-webkit-scrollbar { width: 4px; }
+        .panel-body::-webkit-scrollbar-track { background: transparent; }
+        .panel-body::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+        /* ═══════════ Conversation Feed ═══════════ */
+        .conv-item {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(42,53,84,0.4);
+            animation: fadeIn 0.4s ease;
+        }
+
+        .conv-item:last-child { border-bottom: none; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .conv-user, .conv-nina {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .conv-avatar {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .conv-user .conv-avatar {
+            background: rgba(123,97,255,0.15);
+        }
+
+        .conv-nina .conv-avatar {
+            background: rgba(6,214,160,0.15);
+        }
+
+        .conv-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        .conv-nina .conv-text { color: var(--text-primary); }
+
+        .conv-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ═══════════ Memory Items ═══════════ */
+        .mem-item {
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(42,53,84,0.4);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .mem-item:last-child { border-bottom: none; }
+
+        .mem-icon {
+            font-size: 16px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .mem-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .mem-summary {
+            font-size: 13px;
+            line-height: 1.4;
+            color: var(--text-primary);
+            word-break: break-word;
+        }
+
+        .mem-date {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .mem-delete {
+            background: none;
+            border: 1px solid rgba(239,71,111,0.2);
+            color: var(--accent-red);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .mem-delete:hover {
+            background: rgba(239,71,111,0.1);
+            border-color: var(--accent-red);
+        }
+
+        /* ═══════════ Tool Log ═══════════ */
+        .tool-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(42,53,84,0.4);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tool-item:last-child { border-bottom: none; }
+
+        .tool-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent-amber);
+            margin-bottom: 3px;
+        }
+
+        .tool-params {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-family: 'Courier New', monospace;
+        }
+
+        .tool-result {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            max-height: 40px;
+            overflow: hidden;
+        }
+
+        .tool-time {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* ═══════════ Empty State ═══════════ */
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .empty-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* ═══════════ Responsive ═══════════ */
+        @media (max-width: 1024px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .panels { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .main { padding: 16px; }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .state-stats { display: none; }
+            .header { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════ Header ═══════════ -->
+<header class="header">
+    <div class="header-left">
+        <div class="logo">🤖</div>
+        <h1>Nina <span>IA</span> — Dashboard</h1>
+    </div>
+    <div id="ws-badge" class="ws-badge disconnected">
+        <div class="ws-dot"></div>
+        <span id="ws-status-text">Desconectado</span>
+    </div>
+</header>
+
+<!-- ═══════════ Main Content ═══════════ -->
+<main class="main">
+
+    <!-- State Bar -->
+    <section class="state-bar">
+        <div id="state-orb" class="state-orb idle">💤</div>
+        <div class="state-info">
+            <h2 id="state-label">Aguardando</h2>
+            <p id="state-desc">Nina está pronta para ouvir</p>
+        </div>
+        <div class="state-stats">
+            <div class="state-stat">
+                <div id="total-convos" class="val">0</div>
+                <div class="lbl">Conversas</div>
+            </div>
+            <div class="state-stat">
+                <div id="total-tools" class="val">0</div>
+                <div class="lbl">Tools</div>
+            </div>
+            <div class="state-stat">
+                <div id="total-ws" class="val">0</div>
+                <div class="lbl">Conexões</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Metrics Grid -->
+    <section class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">🎤 Latência STT</div>
+            <div id="metric-stt" class="metric-value">--</div>
+            <div id="metric-stt-sub" class="metric-sub">ms média</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">🧠 Latência LLM</div>
+            <div id="metric-llm" class="metric-value">--</div>
+            <div id="metric-llm-sub" class="metric-sub">ms média</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">🔊 Latência TTS</div>
+            <div id="metric-tts" class="metric-value">--</div>
+            <div id="metric-tts-sub" class="metric-sub">ms média</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">⏱️ Latência Total</div>
+            <div id="metric-total" class="metric-value">--</div>
+            <div id="metric-total-sub" class="metric-sub">ms média</div>
+        </div>
+    </section>
+
+    <!-- Content Panels -->
+    <section class="panels">
+        <!-- Conversations -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>💬 Conversas <span id="conv-badge" class="panel-badge">0</span></h3>
+            </div>
+            <div id="conv-feed" class="panel-body">
+                <div class="empty">
+                    <div class="empty-icon">💬</div>
+                    Aguardando conversas...
+                </div>
+            </div>
+        </div>
+
+        <!-- Memories -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>📚 Memórias <span id="mem-badge" class="panel-badge">0</span></h3>
+            </div>
+            <div id="mem-feed" class="panel-body">
+                <div class="empty">
+                    <div class="empty-icon">📚</div>
+                    Nenhuma memória salva
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bottom Panels -->
+    <section class="panels">
+        <!-- Control Panel (New) -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>🎛️ Painel de Controle <span id="inject-badge" class="panel-badge" style="display:none; background: rgba(240,192,64,0.15); color: var(--accent-amber);">Injeção ativa</span></h3>
+            </div>
+            <div class="panel-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="control-group">
+                    <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; display: block;">Injetar fala (Ignora microfone)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="inject-msg" placeholder="Ex: Que horas são?" style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: var(--radius-sm); outline: none;">
+                        <button onclick="injectMessage()" style="background: var(--accent-cyan); color: #000; border: none; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">Enviar</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label style="font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; display: block;">Forçar Tópico Prioritário (Adiciona contexto)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="force-topic" placeholder="Ex: Fale como um pirata" style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: var(--radius-sm); outline: none;">
+                        <button onclick="forceTopic()" style="background: var(--accent-purple); color: #fff; border: none; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">Forçar</button>
+                    </div>
+                </div>
+                <div>
+                    <h4 style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px;">Últimas Injeções</h4>
+                    <div id="injection-history" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-secondary);">
+                        <div class="empty" style="padding: 10px 0;">Nenhuma injeção recente.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Log -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>🔧 Log de Tools <span id="tool-badge" class="panel-badge">0</span></h3>
+            </div>
+            <div id="tool-feed" class="panel-body">
+                <div class="empty">
+                    <div class="empty-icon">🔧</div>
+                    Nenhuma tool executada
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+/* ═══════════════════════════════════════════════════ */
+/* Nina IA Dashboard — Frontend Logic                  */
+/* ═══════════════════════════════════════════════════ */
+
+const API_BASE = window.location.origin;
+const WS_URL = `ws://${window.location.host}/ws`;
+
+// ── DOM Elements ─────────────────────────────────
+const dom = {
+    wsStatus:    document.getElementById('ws-status-text'),
+    wsBadge:     document.getElementById('ws-badge'),
+    stateOrb:    document.getElementById('state-orb'),
+    stateLabel:  document.getElementById('state-label'),
+    stateDesc:   document.getElementById('state-desc'),
+    totalConvos: document.getElementById('total-convos'),
+    totalTools:  document.getElementById('total-tools'),
+    totalWs:     document.getElementById('total-ws'),
+    metricStt:   document.getElementById('metric-stt'),
+    metricLlm:   document.getElementById('metric-llm'),
+    metricTts:   document.getElementById('metric-tts'),
+    metricTotal: document.getElementById('metric-total'),
+    metricSttSub:   document.getElementById('metric-stt-sub'),
+    metricLlmSub:   document.getElementById('metric-llm-sub'),
+    metricTtsSub:   document.getElementById('metric-tts-sub'),
+    metricTotalSub: document.getElementById('metric-total-sub'),
+    convFeed:    document.getElementById('conv-feed'),
+    convBadge:   document.getElementById('conv-badge'),
+    memFeed:     document.getElementById('mem-feed'),
+    memBadge:    document.getElementById('mem-badge'),
+    toolFeed:    document.getElementById('tool-feed'),
+    toolBadge:   document.getElementById('tool-badge'),
+    injectBadge: document.getElementById('inject-badge'),
+    injectHistory: document.getElementById('injection-history')
+};
+
+// ── Injections History State ─────────────────────
+const injectionList = [];
+
+// ── State Config ─────────────────────────────────
+const STATE_CONFIG = {
+    idle:      { emoji: '💤', label: 'Aguardando', desc: 'Nina está pronta para ouvir' },
+    listening: { emoji: '🎤', label: 'Ouvindo', desc: 'Nina está escutando você falar...' },
+    thinking:  { emoji: '🧠', label: 'Pensando', desc: 'Nina está processando com o Gemini...' },
+    speaking:  { emoji: '🔊', label: 'Falando', desc: 'Nina está respondendo por voz...' },
+    error:     { emoji: '⚠️', label: 'Erro', desc: 'Ocorreu um erro no pipeline' },
+};
+
+// ── WebSocket ────────────────────────────────────
+let ws = null;
+let reconnectTimer = null;
+
+function connectWebSocket() {
+    try {
+        ws = new WebSocket(WS_URL);
+
+        ws.onopen = () => {
+            dom.wsBadge.className = 'ws-badge';
+            dom.wsStatus.textContent = 'Conectado';
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+        };
+
+        ws.onclose = () => {
+            dom.wsBadge.className = 'ws-badge disconnected';
+            dom.wsStatus.textContent = 'Desconectado';
+            reconnectTimer = setTimeout(connectWebSocket, 3000);
+        };
+
+        ws.onerror = () => {
+            dom.wsBadge.className = 'ws-badge disconnected';
+            dom.wsStatus.textContent = 'Erro';
+        };
+
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            handleEvent(msg);
+        };
+    } catch (e) {
+        console.error('WS error:', e);
+        reconnectTimer = setTimeout(connectWebSocket, 3000);
+    }
+}
+
+function handleEvent(msg) {
+    switch (msg.type) {
+        case 'initial_state':
+            updateStatus(msg.data);
+            break;
+        case 'state_change':
+            updateState(msg.state);
+            break;
+        case 'new_conversation':
+            addConversation(msg.data);
+            break;
+        case 'tool_executed':
+            addToolLog(msg.data);
+            break;
+        case 'injection_active':
+            addInjectionLog(msg.data);
+            break;
+    }
+}
+
+// ── State Updates ────────────────────────────────
+function updateState(state) {
+    const cfg = STATE_CONFIG[state] || STATE_CONFIG.idle;
+    dom.stateOrb.className = `state-orb ${state}`;
+    dom.stateOrb.textContent = cfg.emoji;
+    dom.stateLabel.textContent = cfg.label;
+    dom.stateDesc.textContent = cfg.desc;
+}
+
+function updateStatus(data) {
+    updateState(data.state);
+    dom.totalConvos.textContent = data.total_conversations || 0;
+    dom.totalTools.textContent = data.total_tools_executed || 0;
+    dom.totalWs.textContent = data.active_websockets || 0;
+}
+
+// ── Conversations ────────────────────────────────
+function addConversation(conv) {
+    // Remove empty state
+    const empty = dom.convFeed.querySelector('.empty');
+    if (empty) empty.remove();
+
+    const t = conv.timestamp ? new Date(conv.timestamp).toLocaleTimeString('pt-BR') : '';
+
+    const item = document.createElement('div');
+    item.className = 'conv-item';
+    item.innerHTML = `
+        <div class="conv-user">
+            <div class="conv-avatar">👤</div>
+            <div>
+                <div class="conv-text">${escHtml(conv.user)}</div>
+            </div>
+        </div>
+        <div class="conv-nina">
+            <div class="conv-avatar">🤖</div>
+            <div>
+                <div class="conv-text">${escHtml(conv.nina)}</div>
+                <div class="conv-time">${t}</div>
+            </div>
+        </div>
+    `;
+
+    dom.convFeed.prepend(item);
+
+    // Update badge
+    const count = dom.convFeed.querySelectorAll('.conv-item').length;
+    dom.convBadge.textContent = count;
+    dom.totalConvos.textContent = count;
+}
+
+function renderConversations(conversations) {
+    dom.convFeed.innerHTML = '';
+    if (!conversations || conversations.length === 0) {
+        dom.convFeed.innerHTML = '<div class="empty"><div class="empty-icon">💬</div>Aguardando conversas...</div>';
+        dom.convBadge.textContent = '0';
+        return;
+    }
+    conversations.reverse().forEach(c => addConversation(c));
+}
+
+// ── Memories ─────────────────────────────────────
+function renderMemories(memories) {
+    dom.memFeed.innerHTML = '';
+    dom.memBadge.textContent = memories.length;
+
+    if (memories.length === 0) {
+        dom.memFeed.innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Nenhuma memória salva</div>';
+        return;
+    }
+
+    memories.forEach(m => {
+        const date = m.timestamp ? new Date(m.timestamp).toLocaleString('pt-BR') : '';
+        const item = document.createElement('div');
+        item.className = 'mem-item';
+        item.innerHTML = `
+            <div class="mem-icon">🧠</div>
+            <div class="mem-content">
+                <div class="mem-summary">${escHtml(m.summary || '')}</div>
+                <div class="mem-date">${date}</div>
+            </div>
+            <button class="mem-delete" onclick="deleteMemory('${m.id}', this)">✕</button>
+        `;
+        dom.memFeed.appendChild(item);
+    });
+}
+
+async function deleteMemory(id, btn) {
+    btn.textContent = '...';
+    try {
+        await fetch(`${API_BASE}/memories/${id}`, { method: 'DELETE' });
+        btn.closest('.mem-item').remove();
+        const count = dom.memFeed.querySelectorAll('.mem-item').length;
+        dom.memBadge.textContent = count;
+        if (count === 0) {
+            dom.memFeed.innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Nenhuma memória salva</div>';
+        }
+    } catch (e) {
+        btn.textContent = '✕';
+        console.error('Delete error:', e);
+    }
+}
+
+// ── Tools Log ────────────────────────────────────
+function addToolLog(tool) {
+    const empty = dom.toolFeed.querySelector('.empty');
+    if (empty) empty.remove();
+
+    const t = tool.timestamp ? new Date(tool.timestamp).toLocaleTimeString('pt-BR') : '';
+    const params = tool.params ? JSON.stringify(tool.params) : '{}';
+
+    const item = document.createElement('div');
+    item.className = 'tool-item';
+    item.innerHTML = `
+        <div class="tool-name">🔧 ${escHtml(tool.tool)}</div>
+        <div class="tool-params">${escHtml(params)}</div>
+        <div class="tool-result">${escHtml(tool.result || '')}</div>
+        <div class="tool-time">${t}</div>
+    `;
+
+    dom.toolFeed.prepend(item);
+    const count = dom.toolFeed.querySelectorAll('.tool-item').length;
+    dom.toolBadge.textContent = count;
+    dom.totalTools.textContent = count;
+}
+
+function renderToolLog(tools) {
+    dom.toolFeed.innerHTML = '';
+    if (!tools || tools.length === 0) {
+        dom.toolFeed.innerHTML = '<div class="empty"><div class="empty-icon">🔧</div>Nenhuma tool executada</div>';
+        dom.toolBadge.textContent = '0';
+        return;
+    }
+    tools.reverse().forEach(t => addToolLog(t));
+}
+
+// ── Control Panel Injections ─────────────────────
+
+function showInjectionBadge() {
+    dom.injectBadge.style.display = 'inline-block';
+    setTimeout(() => { dom.injectBadge.style.display = 'none'; }, 5000);
+}
+
+function addInjectionLog(data) {
+    showInjectionBadge();
+    const empty = dom.injectHistory.querySelector('.empty');
+    if (empty) empty.remove();
+
+    const t = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('pt-BR') : new Date().toLocaleTimeString('pt-BR');
+    const isTopic = data.type === 'topic';
+    const icon = isTopic ? '🎯' : '💉';
+    const label = isTopic ? 'Tópico Forçado' : 'Fala Injetada';
+
+    const item = document.createElement('div');
+    item.style.cssText = "display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(42,53,84,0.4);";
+    item.innerHTML = `
+        <span style="flex-shrink:0;">${icon}</span>
+        <div style="flex: 1;">
+            <div style="color: var(--text-primary); font-weight: 500; font-size: 12px; margin-bottom: 2px;">${label}</div>
+            <div style="font-size: 11px; word-break: break-word;">"${escHtml(data.text)}"</div>
+        </div>
+        <div style="font-size: 10px; color: var(--text-muted); flex-shrink:0;">${t}</div>
+    `;
+
+    dom.injectHistory.prepend(item);
+    
+    // Keep max 5 items
+    const items = dom.injectHistory.children;
+    if (items.length > 5) {
+        items[items.length - 1].remove();
+    }
+}
+
+async function injectMessage() {
+    const el = document.getElementById('inject-msg');
+    const message = el.value.trim();
+    if (!message) return;
+    try {
+        await fetch(`${API_BASE}/inject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message })
+        });
+        el.value = '';
+    } catch (e) {
+        console.error('Inject error:', e);
+    }
+}
+
+async function forceTopic() {
+    const el = document.getElementById('force-topic');
+    const topic = el.value.trim();
+    if (!topic) return;
+    try {
+        await fetch(`${API_BASE}/force_topic`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ topic })
+        });
+        el.value = '';
+    } catch (e) {
+        console.error('Force topic error:', e);
+    }
+}
+
+// ── Metrics ──────────────────────────────────────
+function updateMetrics(metrics) {
+    const stt = metrics.STT || {};
+    const llm = metrics.LLM || {};
+    const tts = metrics.TTS || {};
+    const total = metrics.TOTAL || {};
+
+    dom.metricStt.textContent = stt.avg_ms ? `${stt.avg_ms}` : '--';
+    dom.metricLlm.textContent = llm.avg_ms ? `${llm.avg_ms}` : '--';
+    dom.metricTts.textContent = tts.avg_ms ? `${tts.avg_ms}` : '--';
+    dom.metricTotal.textContent = total.avg_ms ? `${total.avg_ms}` : '--';
+
+    dom.metricSttSub.textContent = stt.count ? `ms média (${stt.count} amostras)` : 'ms média';
+    dom.metricLlmSub.textContent = llm.count ? `ms média (${llm.count} amostras)` : 'ms média';
+    dom.metricTtsSub.textContent = tts.count ? `ms média (${tts.count} amostras)` : 'ms média';
+    dom.metricTotalSub.textContent = total.count ? `ms média (${total.count} ciclos)` : 'ms média';
+}
+
+// ── Helpers ──────────────────────────────────────
+function escHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ── Initial Data Load ────────────────────────────
+async function loadInitialData() {
+    try {
+        const [statusR, histR, memR, metricsR, toolsR] = await Promise.all([
+            fetch(`${API_BASE}/status`).then(r => r.json()).catch(() => ({})),
+            fetch(`${API_BASE}/history`).then(r => r.json()).catch(() => ({ conversations: [] })),
+            fetch(`${API_BASE}/memories`).then(r => r.json()).catch(() => ({ memories: [] })),
+            fetch(`${API_BASE}/metrics`).then(r => r.json()).catch(() => ({})),
+            fetch(`${API_BASE}/tools/log`).then(r => r.json()).catch(() => ({ tools: [] })),
+        ]);
+
+        updateStatus(statusR);
+        renderConversations(histR.conversations || []);
+        renderMemories(memR.memories || []);
+        updateMetrics(metricsR);
+        renderToolLog(toolsR.tools || []);
+    } catch (e) {
+        console.error('Load error:', e);
+    }
+}
+
+// ── Polling fallback ─────────────────────────────
+setInterval(async () => {
+    try {
+        const [statusR, metricsR] = await Promise.all([
+            fetch(`${API_BASE}/status`).then(r => r.json()).catch(() => null),
+            fetch(`${API_BASE}/metrics`).then(r => r.json()).catch(() => null),
+        ]);
+        if (statusR) updateStatus(statusR);
+        if (metricsR) updateMetrics(metricsR);
+    } catch (e) { /* silent */ }
+}, 5000);
+
+// ── Boot ─────────────────────────────────────────
+loadInitialData();
+connectWebSocket();
+</script>
+
+</body>
+</html>
